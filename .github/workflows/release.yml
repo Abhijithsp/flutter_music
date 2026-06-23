@@ -74,12 +74,10 @@ jobs:
           if [ -z "$ANDROID_KEYSTORE_BASE64" ]; then
             echo "ANDROID_KEYSTORE_BASE64 is not set in secrets. Skipping key.properties generation."
           else
-            cat <<EOF > android/key.properties
-storePassword=$KEY_STORE_PASSWORD
-keyPassword=$KEY_PASSWORD
-keyAlias=$ALIAS
-storeFile=release.jks
-EOF
+            echo "storePassword=$KEY_STORE_PASSWORD" > android/key.properties
+            echo "keyPassword=$KEY_PASSWORD" >> android/key.properties
+            echo "keyAlias=$ALIAS" >> android/key.properties
+            echo "storeFile=release.jks" >> android/key.properties
           fi
 
       - name: Build APK
