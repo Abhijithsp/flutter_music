@@ -2,9 +2,15 @@ name: Build & Release Signed APK and AAB
 
 on:
   push:
+    branches:
+      - main
+      - master
     tags:
       - 'v*'
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -14,6 +20,21 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+
+      - name: Determine Tag and Release Name
+        id: release_info
+        run: |
+          if [ "${{ github.ref_type }}" = "tag" ]; then
+            echo "tag=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+            echo "release_name=Release ${{ github.ref_name }}" >> $GITHUB_OUTPUT
+            echo "draft=false" >> $GITHUB_OUTPUT
+            echo "prerelease=false" >> $GITHUB_OUTPUT
+          else
+            echo "tag=v0.0.${{ github.run_number }}" >> $GITHUB_OUTPUT
+            echo "release_name=Dev Build v0.0.${{ github.run_number }}" >> $GITHUB_OUTPUT
+            echo "draft=false" >> $GITHUB_OUTPUT
+            echo "prerelease=true" >> $GITHUB_OUTPUT
+          fi
 
       - name: Set up Java
         uses: actions/setup-java@v4
@@ -55,14 +76,27 @@ jobs:
       - name: Build Release AAB
         run: flutter build appbundle --release
 
-      - name: Upload Release APK
+      - name: Upload Release APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: release-apk
           path: build/app/outputs/flutter-apk/app-release.apk
 
-      - name: Upload Release AAB
+      - name: Upload Release AAB Artifact
         uses: actions/upload-artifact@v4
         with:
           name: release-aab
           path: build/app/outputs/bundle/release/app-release.aab
+
+      - name: Create and Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.release_info.outputs.tag }}
+          name: ${{ steps.release_info.outputs.release_name }}
+          draft: ${{ steps.release_info.outputs.draft == 'true' }}
+          prerelease: ${{ steps.release_info.outputs.prerelease == 'true' }}
+          files: |
+            build/app/outputs/flutter-apk/app-release.apk
+            build/app/outputs/bundle/release/app-release.aab
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
