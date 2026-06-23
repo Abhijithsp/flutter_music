@@ -1,30 +1,71 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
-import 'package:flutter_music/main.dart';
+import 'package:flutter_music/features/music_library/domain/entities/song.dart';
+import 'package:flutter_music/features/music_library/data/models/song_model.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  group('Song Entity Tests', () {
+    test('Songs with the same ID should be equal', () {
+      const song1 = Song(
+        id: '1',
+        title: 'Song One',
+        artist: 'Artist One',
+        album: 'Album One',
+        duration: Duration(minutes: 3),
+        uri: 'uri/1',
+      );
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+      const song2 = Song(
+        id: '1',
+        title: 'Song One - Remastered',
+        artist: 'Artist One',
+        album: 'Album One',
+        duration: Duration(minutes: 3),
+        uri: 'uri/1',
+      );
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+      expect(song1, equals(song2));
+    });
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    test('Songs with different IDs should not be equal', () {
+      const song1 = Song(
+        id: '1',
+        title: 'Song One',
+        artist: 'Artist One',
+        album: 'Album One',
+        duration: Duration(minutes: 3),
+        uri: 'uri/1',
+      );
+
+      const song2 = Song(
+        id: '2',
+        title: 'Song One',
+        artist: 'Artist One',
+        album: 'Album One',
+        duration: Duration(minutes: 3),
+        uri: 'uri/1',
+      );
+
+      expect(song1, isNot(equals(song2)));
+    });
+  });
+
+  group('SongModel Factory Tests', () {
+    test('fromMock creates a valid SongModel', () {
+      final model = SongModel.fromMock(
+        '100',
+        'Test Song',
+        'Test Artist',
+        'Test Album',
+        const Duration(seconds: 180),
+        'content://media/external/audio/media/100',
+      );
+
+      expect(model.id, '100');
+      expect(model.title, 'Test Song');
+      expect(model.artist, 'Test Artist');
+      expect(model.album, 'Test Album');
+      expect(model.duration, const Duration(seconds: 180));
+      expect(model.uri, 'content://media/external/audio/media/100');
+    });
   });
 }
