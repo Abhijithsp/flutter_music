@@ -26,6 +26,7 @@ class MainShellPage extends StatefulWidget {
 
 class _MainShellPageState extends State<MainShellPage> {
   String _currentTab = 'Home';
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   Widget _getPage(String tabName) {
     switch (tabName) {
@@ -157,7 +158,15 @@ class _MainShellPageState extends State<MainShellPage> {
           );
         }
 
+        final bool hasOverflow = tabs.length > 5;
+        final List<String> bottomBarTabs = hasOverflow
+            ? [...tabs.take(4), 'More']
+            : tabs;
+
+        final bool isCurrentTabInBottomBar = bottomBarTabs.contains(_currentTab);
+
         return Scaffold(
+          key: _scaffoldKey,
           drawer: isTablet ? null : Drawer(
             child: buildSidebar(),
           ),
@@ -219,74 +228,95 @@ class _MainShellPageState extends State<MainShellPage> {
           // Bottom Navigation Bar for Mobile Phones
           bottomNavigationBar: isTablet
               ? null
-              : Container(
-                  padding: const EdgeInsets.only(top: 8, bottom: 20),
-                  decoration: BoxDecoration(
-                    color: colors.surface.withValues(alpha: 0.7),
-                    border: Border(
-                      top: BorderSide(
+              : Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+                  child: Container(
+                    height: 64,
+                    decoration: BoxDecoration(
+                      color: colors.surface.withValues(alpha: 0.7),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
                         color: colors.outlineVariant.withValues(alpha: 0.15),
                       ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.25),
+                          blurRadius: 16,
+                          offset: const Offset(0, 8),
+                        ),
+                      ],
                     ),
-                  ),
-                  child: ClipRRect(
-                    child: BackdropFilter(
-                      filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        children: tabs.map((tab) {
-                          final isSelected = tab == _currentTab;
-                          if (isSelected) {
-                            return GestureDetector(
-                              onTap: () {},
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                decoration: BoxDecoration(
-                                  color: colors.secondaryContainer,
-                                  borderRadius: BorderRadius.circular(30),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(20),
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          children: bottomBarTabs.map((tab) {
+                            final isMore = tab == 'More';
+                            final isSelected = isMore
+                                ? !isCurrentTabInBottomBar
+                                : (tab == _currentTab);
+
+                            return Expanded(
+                              child: GestureDetector(
+                                behavior: HitTestBehavior.opaque,
+                                onTap: () {
+                                  if (isMore) {
+                                    _scaffoldKey.currentState?.openDrawer();
+                                  } else {
+                                    setState(() {
+                                      _currentTab = tab;
+                                    });
+                                  }
+                                },
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    Icon(_getTabIcon(tab), color: colors.onSecondaryContainer, size: 20),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      tab,
-                                      style: TextStyle(
-                                        color: colors.onSecondaryContainer,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 13,
+                                    AnimatedScale(
+                                      scale: isSelected ? 1.15 : 1.0,
+                                      duration: const Duration(milliseconds: 200),
+                                      curve: Curves.easeOutCubic,
+                                      child: Icon(
+                                        isMore ? Icons.apps_rounded : _getTabIcon(tab),
+                                        color: isSelected ? colors.primary : colors.onSurfaceVariant.withValues(alpha: 0.6),
+                                        size: 22,
                                       ),
                                     ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      tab,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        color: isSelected ? colors.primary : colors.onSurfaceVariant.withValues(alpha: 0.6),
+                                        fontSize: 10,
+                                        fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                                      ),
+                                    ),
+                                    AnimatedContainer(
+                                      duration: const Duration(milliseconds: 200),
+                                      margin: const EdgeInsets.only(top: 2),
+                                      height: 3,
+                                      width: isSelected ? 8 : 0,
+                                      decoration: BoxDecoration(
+                                        color: colors.primary,
+                                        borderRadius: BorderRadius.circular(1.5),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: colors.primary.withValues(alpha: 0.5),
+                                            blurRadius: 4,
+                                            spreadRadius: 0.5,
+                                          )
+                                        ],
+                                      ),
+                                    )
                                   ],
                                 ),
                               ),
                             );
-                          }
-
-                          return GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                _currentTab = tab;
-                              });
-                            },
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(_getTabIcon(tab), color: colors.onSurfaceVariant, size: 20),
-                                const SizedBox(height: 4),
-                                Text(
-                                  tab,
-                                  style: TextStyle(
-                                    color: colors.onSurfaceVariant,
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        }).toList(),
+                          }).toList(),
+                        ),
                       ),
                     ),
                   ),

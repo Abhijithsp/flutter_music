@@ -223,7 +223,31 @@ class _SongsPageState extends State<SongsPage> {
                             'Songs',
                             style: theme.appBarTheme.titleTextStyle?.copyWith(color: colors.onSurface),
                           ),
+                    bottom: libraryState.isScanning
+                        ? PreferredSize(
+                            preferredSize: const Size.fromHeight(2),
+                            child: LinearProgressIndicator(
+                              minHeight: 2,
+                              backgroundColor: Colors.transparent,
+                              valueColor: AlwaysStoppedAnimation<Color>(colors.primary),
+                            ),
+                          )
+                        : null,
                     actions: [
+                      if (!_isSearching)
+                        IconButton(
+                          icon: const Icon(Icons.sync_rounded),
+                          tooltip: 'Scan Library',
+                          onPressed: () {
+                            context.read<LibraryCubit>().loadSongs(forceScan: true);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Scanning device for music...'),
+                                duration: Duration(seconds: 2),
+                              ),
+                            );
+                          },
+                        ),
                       IconButton(
                         icon: Icon(_isSearching ? Icons.close_rounded : Icons.search_rounded),
                         onPressed: () {

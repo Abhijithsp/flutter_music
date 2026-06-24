@@ -68,6 +68,7 @@ Future<void> setupServiceLocator() async {
     () => LibraryCubit(
       getAllSongs: getIt<GetAllSongs>(),
       permissionService: getIt<PermissionService>(),
+      prefs: getIt<SharedPreferences>(),
     ),
   );
 

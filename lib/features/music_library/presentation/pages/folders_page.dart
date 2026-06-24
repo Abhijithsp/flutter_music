@@ -24,15 +24,17 @@ class _FoldersPageState extends State<FoldersPage> {
     super.dispose();
   }
 
-  String _getSongFolderName(String uri) {
-    try {
-      final parsed = Uri.parse(uri);
-      final path = parsed.toFilePath();
-      final parts = path.split(path.contains('\\') ? '\\' : '/');
-      if (parts.length > 1) {
-        return parts[parts.length - 2];
-      }
-    } catch (_) {}
+  String _getSongFolderName(Song song) {
+    final filePath = song.path ?? '';
+    if (filePath.isNotEmpty) {
+      try {
+        final path = filePath.replaceAll('\\', '/');
+        final parts = path.split('/');
+        if (parts.length > 1) {
+          return parts[parts.length - 2];
+        }
+      } catch (_) {}
+    }
     return 'Music';
   }
 
@@ -54,7 +56,7 @@ class _FoldersPageState extends State<FoldersPage> {
           final foldersMap = <String, List<Song>>{};
 
           for (final song in songs) {
-            final folderName = _getSongFolderName(song.uri);
+            final folderName = _getSongFolderName(song);
             if (!foldersMap.containsKey(folderName)) {
               foldersMap[folderName] = [];
             }
@@ -105,7 +107,31 @@ class _FoldersPageState extends State<FoldersPage> {
                         'Folders',
                         style: theme.appBarTheme.titleTextStyle?.copyWith(color: colors.onSurface),
                       ),
+                bottom: libraryState.isScanning
+                    ? PreferredSize(
+                        preferredSize: const Size.fromHeight(2),
+                        child: LinearProgressIndicator(
+                          minHeight: 2,
+                          backgroundColor: Colors.transparent,
+                          valueColor: AlwaysStoppedAnimation<Color>(colors.primary),
+                        ),
+                      )
+                    : null,
                 actions: [
+                  if (!_isSearching)
+                    IconButton(
+                      icon: const Icon(Icons.sync_rounded),
+                      tooltip: 'Scan Library',
+                      onPressed: () {
+                        context.read<LibraryCubit>().loadSongs(forceScan: true);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Scanning device for music...'),
+                            duration: Duration(seconds: 2),
+                          ),
+                        );
+                      },
+                    ),
                   IconButton(
                     icon: Icon(_isSearching ? Icons.close_rounded : Icons.search_rounded),
                     onPressed: () {

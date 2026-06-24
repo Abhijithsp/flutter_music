@@ -3,6 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/widgets/glassmorphic_container.dart';
 import '../bloc/settings_cubit.dart';
 import '../bloc/settings_state.dart';
+import '../../../music_library/presentation/bloc/library_cubit.dart';
+import '../../../music_library/presentation/bloc/library_state.dart';
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
@@ -414,6 +416,103 @@ class SettingsPage extends StatelessWidget {
                     ),
                   ),
 
+                  _buildSectionHeader(context, 'Library & Scanning'),
+
+                  Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+                    child: GlassmorphicContainer(
+                      borderRadius: BorderRadius.circular(16),
+                      padding: const EdgeInsets.all(16),
+                      borderOpacity: 0.08,
+                      backgroundOpacity: 0.04,
+                      child: Column(
+                        children: [
+                          BlocBuilder<LibraryCubit, LibraryState>(
+                            builder: (context, libraryState) {
+                              return ListTile(
+                                contentPadding: EdgeInsets.zero,
+                                leading: Icon(Icons.sync_rounded, color: colors.primary),
+                                title: const Text('Auto-Scan on Startup', style: TextStyle(fontWeight: FontWeight.bold)),
+                                subtitle: const Text('Scan device for new music when app opens'),
+                                trailing: Switch(
+                                  value: libraryState.autoScan,
+                                  onChanged: (val) {
+                                    context.read<LibraryCubit>().setAutoScan(val);
+                                  },
+                                  activeThumbColor: colors.primary,
+                                ),
+                              );
+                            },
+                          ),
+                          const Divider(height: 24, thickness: 0.5),
+                          BlocBuilder<LibraryCubit, LibraryState>(
+                            builder: (context, libraryState) {
+                              return ListTile(
+                                contentPadding: EdgeInsets.zero,
+                                leading: Icon(Icons.youtube_searched_for_rounded, color: colors.primary),
+                                title: const Text('Scan Library Now', style: TextStyle(fontWeight: FontWeight.bold)),
+                                subtitle: const Text('Search device for new audio tracks manually'),
+                                trailing: libraryState.isScanning
+                                    ? SizedBox(
+                                        width: 24,
+                                        height: 24,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          valueColor: AlwaysStoppedAnimation<Color>(colors.primary),
+                                        ),
+                                      )
+                                    : IconButton(
+                                        icon: Icon(Icons.play_arrow_rounded, color: colors.primary),
+                                        onPressed: () {
+                                          context.read<LibraryCubit>().loadSongs(forceScan: true);
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            const SnackBar(
+                                              content: Text('Scanning device for music...'),
+                                              duration: Duration(seconds: 2),
+                                            ),
+                                          );
+                                        },
+                                      ),
+                              );
+                            },
+                          ),
+                          const Divider(height: 24, thickness: 0.5),
+                          BlocBuilder<LibraryCubit, LibraryState>(
+                            builder: (context, libraryState) {
+                              return ListTile(
+                                contentPadding: EdgeInsets.zero,
+                                leading: Icon(Icons.folder_special_rounded, color: colors.primary),
+                                title: const Text('Included Folders', style: TextStyle(fontWeight: FontWeight.bold)),
+                                subtitle: Text(
+                                  libraryState.includedFolders.isEmpty
+                                      ? 'All music folders are scanned'
+                                      : '${libraryState.includedFolders.length} folders restricted',
+                                ),
+                                trailing: Icon(Icons.chevron_right_rounded, color: colors.onSurfaceVariant),
+                                onTap: () => _showFolderManagementBottomSheet(context, isExcluded: false),
+                              );
+                            },
+                          ),
+                          const Divider(height: 24, thickness: 0.5),
+                          BlocBuilder<LibraryCubit, LibraryState>(
+                            builder: (context, libraryState) {
+                              return ListTile(
+                                contentPadding: EdgeInsets.zero,
+                                leading: Icon(Icons.folder_off_rounded, color: colors.primary),
+                                title: const Text('Excluded Folders', style: TextStyle(fontWeight: FontWeight.bold)),
+                                subtitle: Text(
+                                  '${libraryState.excludedFolders.length} folders ignored',
+                                ),
+                                trailing: Icon(Icons.chevron_right_rounded, color: colors.onSurfaceVariant),
+                                onTap: () => _showFolderManagementBottomSheet(context, isExcluded: true),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
                   _buildSectionHeader(context, 'Tab Management'),
 
                   Padding(
@@ -480,6 +579,237 @@ class SettingsPage extends StatelessWidget {
           );
         },
       ),
+    );
+  }
+
+  void _showFolderManagementBottomSheet(BuildContext context, {required bool isExcluded}) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) {
+        final theme = Theme.of(context);
+        final colors = theme.colorScheme;
+
+        return DraggableScrollableSheet(
+          initialChildSize: 0.6,
+          maxChildSize: 0.9,
+          minChildSize: 0.4,
+          expand: false,
+          builder: (context, scrollController) {
+            return BlocBuilder<LibraryCubit, LibraryState>(
+              builder: (context, libState) {
+                final folders = isExcluded ? libState.excludedFolders : libState.includedFolders;
+                
+                return Container(
+                  decoration: BoxDecoration(
+                    color: colors.surfaceContainerHigh.withValues(alpha: 0.95),
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+                    border: Border(
+                      top: BorderSide(color: colors.outlineVariant.withValues(alpha: 0.2)),
+                    ),
+                  ),
+                  child: Column(
+                    children: [
+                      Center(
+                        child: Container(
+                          width: 40,
+                          height: 4,
+                          margin: const EdgeInsets.symmetric(vertical: 12),
+                          decoration: BoxDecoration(
+                            color: colors.onSurfaceVariant.withValues(alpha: 0.4),
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              isExcluded ? 'Excluded Folders' : 'Included Folders',
+                              style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.close_rounded),
+                              onPressed: () => Navigator.pop(context),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
+                        child: Text(
+                          isExcluded
+                              ? 'Songs inside these folders will be ignored and hidden from your library.'
+                              : 'Only songs inside these folders will be scanned and shown in your library.',
+                          style: theme.textTheme.bodySmall?.copyWith(color: colors.onSurfaceVariant),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Expanded(
+                        child: folders.isEmpty
+                            ? Center(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(32.0),
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        isExcluded ? Icons.folder_open_rounded : Icons.folder_copy_rounded,
+                                        size: 64,
+                                        color: colors.onSurfaceVariant.withValues(alpha: 0.3),
+                                      ),
+                                      const SizedBox(height: 16),
+                                      Text(
+                                        isExcluded ? 'No folders excluded' : 'No folder restrictions',
+                                        style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        isExcluded
+                                            ? 'All folders containing music on your device are being scanned.'
+                                            : 'The entire device is scanned. Add folders to restrict the library.',
+                                        textAlign: TextAlign.center,
+                                        style: theme.textTheme.bodySmall?.copyWith(color: colors.onSurfaceVariant),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              )
+                            : ListView.builder(
+                                controller: scrollController,
+                                itemCount: folders.length,
+                                itemBuilder: (context, index) {
+                                  final folderPath = folders[index];
+                                  final folderName = folderPath.split('/').last;
+
+                                  return ListTile(
+                                    contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
+                                    leading: CircleAvatar(
+                                      backgroundColor: colors.primaryContainer.withValues(alpha: 0.2),
+                                      child: Icon(Icons.folder_rounded, color: colors.primary),
+                                    ),
+                                    title: Text(folderName, style: const TextStyle(fontWeight: FontWeight.bold)),
+                                    subtitle: Text(folderPath, style: TextStyle(fontSize: 11, color: colors.onSurfaceVariant)),
+                                    trailing: IconButton(
+                                      icon: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent),
+                                      onPressed: () {
+                                        if (isExcluded) {
+                                          context.read<LibraryCubit>().removeExcludedFolder(folderPath);
+                                        } else {
+                                          context.read<LibraryCubit>().removeIncludedFolder(folderPath);
+                                        }
+                                      },
+                                    ),
+                                  );
+                                },
+                              ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
+                        child: SizedBox(
+                          width: double.infinity,
+                          height: 50,
+                          child: FilledButton.icon(
+                            onPressed: () => _showAddFolderDialog(context, isExcluded: isExcluded),
+                            icon: const Icon(Icons.add_rounded),
+                            label: const Text('Add Folder', style: TextStyle(fontWeight: FontWeight.bold)),
+                            style: FilledButton.styleFrom(
+                              backgroundColor: colors.primary,
+                              foregroundColor: colors.onPrimary,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _showAddFolderDialog(BuildContext parentContext, {required bool isExcluded}) {
+    final libraryCubit = parentContext.read<LibraryCubit>();
+    final allDetected = libraryCubit.getDetectedFolders();
+    final currentList = isExcluded ? libraryCubit.state.excludedFolders : libraryCubit.state.includedFolders;
+    final available = allDetected.where((folder) => !currentList.contains(folder)).toList();
+
+    showDialog(
+      context: parentContext,
+      builder: (context) {
+        final theme = Theme.of(context);
+        final colors = theme.colorScheme;
+
+        return AlertDialog(
+          backgroundColor: colors.surfaceContainerHigh,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          title: Text(
+            isExcluded ? 'Exclude a Folder' : 'Include a Folder',
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
+          content: SizedBox(
+            width: double.maxFinite,
+            height: 300,
+            child: available.isEmpty
+                ? Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.info_outline_rounded, size: 48, color: colors.onSurfaceVariant.withValues(alpha: 0.5)),
+                        const SizedBox(height: 16),
+                        Text(
+                          'No folders available',
+                          style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          allDetected.isEmpty 
+                              ? 'No folders have been detected on the device yet. Please run a music scan first.'
+                              : 'All detected folders are already added.',
+                          textAlign: TextAlign.center,
+                          style: theme.textTheme.bodySmall?.copyWith(color: colors.onSurfaceVariant),
+                        ),
+                      ],
+                    ),
+                  )
+                : ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: available.length,
+                    itemBuilder: (context, index) {
+                      final path = available[index];
+                      final name = path.split('/').last;
+
+                      return ListTile(
+                        leading: Icon(Icons.folder_rounded, color: colors.primary),
+                        title: Text(name, style: const TextStyle(fontWeight: FontWeight.bold)),
+                        subtitle: Text(path, style: TextStyle(fontSize: 11, color: colors.onSurfaceVariant), maxLines: 1, overflow: TextOverflow.ellipsis),
+                        onTap: () {
+                          if (isExcluded) {
+                            libraryCubit.addExcludedFolder(path);
+                          } else {
+                            libraryCubit.addIncludedFolder(path);
+                          }
+                          Navigator.pop(context);
+                        },
+                      );
+                    },
+                  ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel', style: TextStyle(fontWeight: FontWeight.bold)),
+            ),
+          ],
+        );
+      },
     );
   }
 }

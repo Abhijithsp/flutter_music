@@ -10,6 +10,7 @@ class SongModel extends Song {
     required super.duration,
     required super.uri,
     super.artworkUri,
+    super.path,
   });
 
   factory SongModel.fromOnAudioQuery(query.SongModel qSong) {
@@ -21,6 +22,7 @@ class SongModel extends Song {
       duration: Duration(milliseconds: qSong.duration ?? 0),
       uri: qSong.uri ?? '',
       artworkUri: null,
+      path: qSong.data,
     );
   }
 
@@ -40,6 +42,7 @@ class SongModel extends Song {
       duration: duration,
       uri: uri,
       artworkUri: null,
+      path: null,
     );
   }
 }
