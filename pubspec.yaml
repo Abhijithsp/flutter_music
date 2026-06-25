@@ -36,6 +36,7 @@ dependencies:
   cupertino_icons: ^1.0.8
   just_audio: ^0.10.5
   audio_service: ^0.18.18
+  audio_session: ^0.2.3
   flutter_bloc: ^9.1.1
   provider: ^6.1.5+1
   get_it: ^9.2.1

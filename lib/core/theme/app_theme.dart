@@ -11,9 +11,17 @@ class AppTheme {
   }
 
   static ThemeData generateTheme(AppThemePreset preset, bool isDark) {
-    final primaryColor = preset.primary;
+    final isInkWash = preset.name == 'Ink Wash';
+    
+    // Invert primary and accent for ink wash in dark mode for high-contrast visibility
+    final primaryColor = isInkWash
+        ? (isDark ? preset.accent : preset.primary)
+        : preset.primary;
     final secondaryColor = preset.secondary;
-    final accentColor = preset.accent;
+    final accentColor = isInkWash
+        ? (isDark ? preset.primary : preset.secondary)
+        : preset.accent;
+        
     final surfaceColor = isDark ? preset.backgroundDark : preset.backgroundLight;
     final cardColor = isDark ? preset.cardDark : preset.cardLight;
 
@@ -28,6 +36,27 @@ class AppTheme {
     final containerHigh = adjustColorBrightness(cardColor, cardBrightnessOffset);
     final containerHighest = adjustColorBrightness(cardColor, cardBrightnessOffset * 2);
 
+    // Custom ink wash surface configurations
+    final onSurfaceColor = isInkWash
+        ? (isDark ? const Color(0xFFFFFDF5) : const Color(0xFF1E1E22))
+        : (isDark ? const Color(0xFFE5E1E4) : const Color(0xFF1C1B1F));
+
+    final onSurfaceVariantColor = isInkWash
+        ? const Color(0xFF8E8E98)
+        : (isDark ? const Color(0xFFCAC3D8) : const Color(0xFF49454F));
+
+    final onPrimaryColor = isInkWash
+        ? (isDark ? const Color(0xFF1E1E22) : const Color(0xFFFFFDF5))
+        : (isDark ? Colors.black : Colors.white);
+
+    final outlineColor = isInkWash
+        ? const Color(0xFF8E8E98)
+        : (isDark ? const Color(0xFF948EA1) : const Color(0xFF79747E));
+
+    final outlineVariantColor = isInkWash
+        ? (isDark ? const Color(0xFF2C2C32) : const Color(0xFFE5E5EA))
+        : (isDark ? const Color(0xFF494455) : const Color(0xFFCAC4D0));
+
     final colorScheme = isDark
         ? ColorScheme.dark(
             primary: primaryColor,
@@ -40,12 +69,12 @@ class AppTheme {
             surfaceContainer: cardColor,
             surfaceContainerHigh: containerHigh,
             surfaceContainerHighest: containerHighest,
-            onPrimary: Colors.black,
+            onPrimary: onPrimaryColor,
             onSecondary: Colors.white,
-            onSurface: const Color(0xFFE5E1E4),
-            onSurfaceVariant: const Color(0xFFCAC3D8),
-            outline: const Color(0xFF948EA1),
-            outlineVariant: const Color(0xFF494455),
+            onSurface: onSurfaceColor,
+            onSurfaceVariant: onSurfaceVariantColor,
+            outline: outlineColor,
+            outlineVariant: outlineVariantColor,
           )
         : ColorScheme.light(
             primary: primaryColor,
@@ -58,12 +87,12 @@ class AppTheme {
             surfaceContainer: cardColor,
             surfaceContainerHigh: containerHigh,
             surfaceContainerHighest: containerHighest,
-            onPrimary: Colors.white,
+            onPrimary: onPrimaryColor,
             onSecondary: Colors.white,
-            onSurface: const Color(0xFF1C1B1F),
-            onSurfaceVariant: const Color(0xFF49454F),
-            outline: const Color(0xFF79747E),
-            outlineVariant: const Color(0xFFCAC4D0),
+            onSurface: onSurfaceColor,
+            onSurfaceVariant: onSurfaceVariantColor,
+            outline: outlineColor,
+            outlineVariant: outlineVariantColor,
           );
 
     return ThemeData(

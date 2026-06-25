@@ -121,22 +121,23 @@ class _SongOptionsBottomSheetState extends State<SongOptionsBottomSheet> {
     showDialog(
       context: context,
       builder: (context) {
+        final colors = Theme.of(context).colorScheme;
         return AlertDialog(
-          backgroundColor: const Color(0xFF1E1E2C),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: const Text('New Playlist', style: TextStyle(color: Colors.white)),
+          backgroundColor: colors.surfaceContainerHigh,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+          title: Text('New Playlist', style: TextStyle(color: colors.onSurface)),
           content: TextField(
             controller: _playlistNameController,
             autofocus: true,
-            style: const TextStyle(color: Colors.white),
+            style: TextStyle(color: colors.onSurface),
             decoration: InputDecoration(
               hintText: 'Enter playlist name',
-              hintStyle: const TextStyle(color: Colors.white30),
+              hintStyle: TextStyle(color: colors.onSurfaceVariant.withValues(alpha: 0.5)),
               enabledBorder: UnderlineInputBorder(
-                borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.2)),
+                borderSide: BorderSide(color: colors.outlineVariant.withValues(alpha: 0.3)),
               ),
-              focusedBorder: const UnderlineInputBorder(
-                borderSide: BorderSide(color: Color(0xFF8B5CF6)),
+              focusedBorder: UnderlineInputBorder(
+                borderSide: BorderSide(color: colors.primary),
               ),
             ),
           ),
@@ -146,7 +147,7 @@ class _SongOptionsBottomSheetState extends State<SongOptionsBottomSheet> {
                 _playlistNameController.clear();
                 Navigator.pop(context);
               },
-              child: const Text('Cancel', style: TextStyle(color: Colors.white70)),
+              child: Text('Cancel', style: TextStyle(color: colors.primary)),
             ),
             TextButton(
               onPressed: () async {
@@ -165,7 +166,7 @@ class _SongOptionsBottomSheetState extends State<SongOptionsBottomSheet> {
                   }
                 }
               },
-              child: const Text('Create', style: TextStyle(color: Color(0xFF8B5CF6), fontWeight: FontWeight.bold)),
+              child: Text('Create', style: TextStyle(color: colors.primary, fontWeight: FontWeight.bold)),
             ),
           ],
         );

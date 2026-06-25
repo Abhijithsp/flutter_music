@@ -21,22 +21,24 @@ class SettingsCubit extends Cubit<SettingsState> {
 
     // Map legacy color value or stored preset name
     final String storedPresetName = _prefs.getString('themePresetName') ?? '';
-    String themePresetName = 'Purple Night';
+    String themePresetName = 'Ink Wash';
     if (storedPresetName.isNotEmpty) {
       themePresetName = storedPresetName;
     } else {
       final colorVal = _prefs.getInt('accentColor');
       if (colorVal != null) {
-        if (colorVal == 0xFF7C4DFF) {
-          themePresetName = 'Purple Night';
-        } else if (colorVal == 0xFF3E82F7) {
-          themePresetName = 'Ocean Blue';
-        } else if (colorVal == 0xFFFF4B7D) {
-          themePresetName = 'Rose Pink';
-        } else if (colorVal == 0xFF00C853) {
-          themePresetName = 'Emerald Green';
-        } else if (colorVal == 0xFFFFAB00) {
-          themePresetName = 'Gold';
+        if (colorVal == 0xFF1E1E22) {
+          themePresetName = 'Ink Wash';
+        } else if (colorVal == 0xFF7C4DFF || colorVal == 0xFF9E86FF) {
+          themePresetName = 'Cosmic Aurora';
+        } else if (colorVal == 0xFF3E82F7 || colorVal == 0xFF2575FC) {
+          themePresetName = 'Deep Ocean';
+        } else if (colorVal == 0xFFFF4B7D || colorVal == 0xFFEC4899) {
+          themePresetName = 'Orchid Blossom';
+        } else if (colorVal == 0xFF00C853 || colorVal == 0xFF00F5A0) {
+          themePresetName = 'Emerald Mint';
+        } else if (colorVal == 0xFFFFAB00 || colorVal == 0xFFD97706) {
+          themePresetName = 'Luxury Gold';
         }
       }
     }

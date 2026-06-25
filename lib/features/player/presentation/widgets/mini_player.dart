@@ -131,10 +131,10 @@ class MiniPlayer extends StatelessWidget {
                                 currentTrack.title,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 14.0,
-                                  color: Colors.white,
+                                  color: theme.colorScheme.onSurface,
                                 ),
                               ),
                               const SizedBox(height: 2),
@@ -151,11 +151,10 @@ class MiniPlayer extends StatelessWidget {
                           ),
                         ),
                         
-                        // Skip Previous
                         IconButton(
-                          icon: const Icon(
+                          icon: Icon(
                             Icons.skip_previous_rounded,
-                            color: Colors.white70,
+                            color: theme.colorScheme.onSurfaceVariant,
                             size: 24,
                           ),
                           onPressed: () => playerCubit.previous(),
@@ -188,11 +187,10 @@ class MiniPlayer extends StatelessWidget {
                           ),
                         ),
                         
-                        // Skip Next
                         IconButton(
-                          icon: const Icon(
+                          icon: Icon(
                             Icons.skip_next_rounded,
-                            color: Colors.white70,
+                            color: theme.colorScheme.onSurfaceVariant,
                             size: 24,
                           ),
                           onPressed: () => playerCubit.next(),

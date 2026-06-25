@@ -15,9 +15,9 @@ class SettingsState {
 
   const SettingsState({
     this.themeMode = ThemeMode.dark,
-    this.accentColor = const Color(0xFF7C4DFF), // Default Sonic Purple
-    this.themePresetName = 'Purple Night',
-    this.previewPresetName = 'Purple Night',
+    this.accentColor = const Color(0xFF1E1E22), // Default Ink Wash
+    this.themePresetName = 'Ink Wash',
+    this.previewPresetName = 'Ink Wash',
     this.previewThemeMode = ThemeMode.dark,
     this.viewPreference = 'list',
     this.defaultStartupScreen = 'Home',

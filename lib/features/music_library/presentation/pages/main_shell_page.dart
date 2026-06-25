@@ -128,7 +128,7 @@ class _MainShellPageState extends State<MainShellPage> {
                           margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                           decoration: BoxDecoration(
                             color: isSelected ? colors.primaryContainer : Colors.transparent,
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(28),
                           ),
                           child: ListTile(
                             leading: Icon(
@@ -232,27 +232,27 @@ class _MainShellPageState extends State<MainShellPage> {
           bottomNavigationBar: isTablet
               ? null
               : Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                   child: Container(
-                    height: 64,
+                    height: 76,
                     decoration: BoxDecoration(
-                      color: colors.surface.withValues(alpha: 0.7),
-                      borderRadius: BorderRadius.circular(20),
+                      color: colors.surface.withValues(alpha: 0.75),
+                      borderRadius: BorderRadius.circular(24),
                       border: Border.all(
                         color: colors.outlineVariant.withValues(alpha: 0.15),
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.25),
-                          blurRadius: 16,
+                          color: Colors.black.withValues(alpha: 0.2),
+                          blurRadius: 20,
                           offset: const Offset(0, 8),
                         ),
                       ],
                     ),
                     child: ClipRRect(
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(24),
                       child: BackdropFilter(
-                        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                        filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceAround,
                           children: bottomBarTabs.map((tab) {
@@ -276,13 +276,18 @@ class _MainShellPageState extends State<MainShellPage> {
                                 child: Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    AnimatedScale(
-                                      scale: isSelected ? 1.15 : 1.0,
-                                      duration: const Duration(milliseconds: 200),
+                                    AnimatedContainer(
+                                      duration: const Duration(milliseconds: 250),
                                       curve: Curves.easeOutCubic,
+                                      height: 32,
+                                      width: 60,
+                                      decoration: BoxDecoration(
+                                        color: isSelected ? colors.primaryContainer : Colors.transparent,
+                                        borderRadius: BorderRadius.circular(16),
+                                      ),
                                       child: Icon(
                                         isMore ? Icons.apps_rounded : _getTabIcon(tab),
-                                        color: isSelected ? colors.primary : colors.onSurfaceVariant.withValues(alpha: 0.6),
+                                        color: isSelected ? colors.onPrimaryContainer : colors.onSurfaceVariant.withValues(alpha: 0.8),
                                         size: 22,
                                       ),
                                     ),
@@ -292,28 +297,11 @@ class _MainShellPageState extends State<MainShellPage> {
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                       style: TextStyle(
-                                        color: isSelected ? colors.primary : colors.onSurfaceVariant.withValues(alpha: 0.6),
+                                        color: isSelected ? colors.onSurface : colors.onSurfaceVariant.withValues(alpha: 0.7),
                                         fontSize: 10,
                                         fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
                                       ),
                                     ),
-                                    AnimatedContainer(
-                                      duration: const Duration(milliseconds: 200),
-                                      margin: const EdgeInsets.only(top: 2),
-                                      height: 3,
-                                      width: isSelected ? 8 : 0,
-                                      decoration: BoxDecoration(
-                                        color: colors.primary,
-                                        borderRadius: BorderRadius.circular(1.5),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: colors.primary.withValues(alpha: 0.5),
-                                            blurRadius: 4,
-                                            spreadRadius: 0.5,
-                                          )
-                                        ],
-                                      ),
-                                    )
                                   ],
                                 ),
                               ),

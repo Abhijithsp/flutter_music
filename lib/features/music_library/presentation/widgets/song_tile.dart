@@ -125,7 +125,7 @@ class SongTile extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
       decoration: BoxDecoration(
         color: isActive 
-            ? const Color(0xFF2A2A2A) // surface-container-high
+            ? colors.primaryContainer.withValues(alpha: 0.25)
             : Colors.transparent,
         borderRadius: BorderRadius.circular(12),
       ),
@@ -139,7 +139,7 @@ class SongTile extends StatelessWidget {
           style: TextStyle(
             fontWeight: isActive ? FontWeight.bold : FontWeight.w600,
             fontSize: 16,
-            color: isActive ? colors.primary : colors.onSurface,
+            color: isActive ? colors.onPrimaryContainer : colors.onSurface,
           ),
         ),
         subtitle: Padding(
@@ -149,7 +149,7 @@ class SongTile extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
-              color: isActive ? colors.primary.withValues(alpha: 0.7) : colors.onSurfaceVariant,
+              color: isActive ? colors.onPrimaryContainer.withValues(alpha: 0.7) : colors.onSurfaceVariant,
               fontSize: 13,
             ),
           ),
@@ -157,7 +157,7 @@ class SongTile extends StatelessWidget {
         trailing: IconButton(
           icon: Icon(
             Icons.more_vert_rounded,
-            color: isActive ? colors.primary : colors.onSurfaceVariant,
+            color: isActive ? colors.onPrimaryContainer : colors.onSurfaceVariant,
           ),
           onPressed: () {
             SongOptionsBottomSheet.show(

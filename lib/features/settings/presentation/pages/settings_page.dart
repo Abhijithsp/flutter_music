@@ -34,13 +34,13 @@ class SettingsPage extends StatelessWidget {
       {
         'key': 'Default',
         'name': 'Default',
-        'bgColor': const Color(0xFF0F0C1B),
-        'borderColor': const Color(0xFF7C4DFF),
+        'bgColor': const Color(0xFF0B0816),
+        'borderColor': const Color(0xFF9E86FF),
         'iconColor': Colors.white,
         'icon': Icons.headphones_rounded,
         'isGradient': true,
         'gradient': const LinearGradient(
-          colors: [Color(0xFF7C4DFF), Color(0xFFFF4B7D)],
+          colors: [Color(0xFF9E86FF), Color(0xFFFF85A2)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
