@@ -13,16 +13,19 @@ class MyAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandler {
     // sequenceStateStream is the authoritative source of truth for the current
     // playlist and track. Piping it to audio_service drives the OS notification.
     _player.sequenceStateStream.listen((state) {
-      final items = state.effectiveSequence
-          .map((src) => src.tag as MediaItem)
-          .toList();
-      queue.add(items);
+      try {
+        final items = state.effectiveSequence
+            .map((src) => src.tag)
+            .whereType<MediaItem>()
+            .toList();
+        queue.add(items);
 
-      // currentIndex is nullable in just_audio 0.10+
-      final idx = state.currentIndex;
-      if (idx != null && idx >= 0 && idx < items.length) {
-        mediaItem.add(items[idx]);
-      }
+        // currentIndex is nullable in just_audio 0.10+
+        final idx = state.currentIndex;
+        if (idx != null && idx >= 0 && idx < items.length) {
+          mediaItem.add(items[idx]);
+        }
+      } catch (_) {}
     });
 
     // ── 2. Forward all player state changes → OS notification ─────────────

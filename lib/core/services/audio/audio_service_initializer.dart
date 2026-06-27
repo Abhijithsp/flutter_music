@@ -16,10 +16,10 @@ class AudioServiceInitializer {
         androidNotificationChannelId: AudioConstants.notificationChannelId,
         androidNotificationChannelName: AudioConstants.notificationChannelName,
         // Keep notification alive – critical for Nothing Phone and other aggressive
-        // battery OEMs. androidNotificationOngoing:true + androidStopForegroundOnPause:true
-        // is the only valid combination that keeps the notification persistent.
-        androidNotificationOngoing: true,
-        androidStopForegroundOnPause: true,
+        // battery OEMs. androidNotificationOngoing:false + androidStopForegroundOnPause:false
+        // is a valid combination that keeps the service in the foreground even when paused.
+        androidNotificationOngoing: false,
+        androidStopForegroundOnPause: false,
         androidShowNotificationBadge: true,
         // Small 96×96 monochrome icon – must be white on transparent
         androidNotificationIcon: 'drawable/ic_stat_music',

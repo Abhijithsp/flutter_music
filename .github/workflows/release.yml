@@ -6,7 +6,7 @@ on:
       - main
       - master
     tags:
-      - 'v*'
+      - "v*"
   pull_request:
     branches:
       - main
@@ -15,151 +15,226 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: flutter-release-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
+    if: github.event_name == 'pull_request' || !contains(github.event.head_commit.message, '[skip ci]')
     name: Build Release Artifacts
     runs-on: ubuntu-latest
 
+    env:
+      FLUTTER_VERSION: "3.44.0"
+
     steps:
-      - name: Checkout repository
+      - name: Checkout Repository
         uses: actions/checkout@v4
-
-      - name: Auto-increment Version
-        id: version_bump
-        if: github.event_name != 'pull_request' && !startsWith(github.ref, 'refs/tags/')
-        run: |
-          version_line=$(grep '^version: ' pubspec.yaml)
-          version_full=$(echo "$version_line" | cut -d' ' -f2)
-          version_name=$(echo "$version_full" | cut -d'+' -f1)
-          build_num=$(echo "$version_full" | cut -d'+' -f2)
-          
-          IFS='.' read -r major minor patch <<< "$version_name"
-          new_patch=$((patch + 1))
-          new_build=$((build_num + 1))
-          new_version="${major}.${minor}.${new_patch}+${new_build}"
-          
-          echo "Bumping version from $version_full to $new_version"
-          sed -i "s/^version: .*/version: $new_version/" pubspec.yaml
-          
-          echo "new_version=v${major}.${minor}.${new_patch}" >> $GITHUB_OUTPUT
-          echo "new_build=${new_build}" >> $GITHUB_OUTPUT
-
-      - name: Commit and Push Version Bump
-        if: github.event_name != 'pull_request' && !startsWith(github.ref, 'refs/tags/')
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add pubspec.yaml
-          git commit -m "chore: bump version to ${{ steps.version_bump.outputs.new_version }}+${{ steps.version_bump.outputs.new_build }} [skip ci]"
-          git push
+        with:
+          fetch-depth: 0
 
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
-          distribution: 'zulu'
-          java-version: '17'
+          distribution: zulu
+          java-version: "17"
+          cache: gradle
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.44.0'
-          channel: 'stable'
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
           cache: true
 
-      - name: Get dependencies
+      - name: Cache Pub Packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.pub-cache
+          key: pub-cache-${{ runner.os }}-${{ hashFiles('**/pubspec.lock') }}
+          restore-keys: |
+            pub-cache-${{ runner.os }}-
+
+      - name: Disable Flutter Analytics
+        run: flutter config --no-analytics
+
+      - name: Flutter Doctor
+        run: flutter doctor -v
+
+      - name: Get Dependencies
         run: flutter pub get
 
-      - name: Analyze code
+      ###########################################################
+      # VERSION BUMP
+      ###########################################################
+
+      - name: Auto Increment Version
+        id: version_bump
+        if: github.event_name != 'pull_request' && !startsWith(github.ref, 'refs/tags/')
+        shell: bash
+        run: |
+
+          VERSION=$(grep '^version:' pubspec.yaml | awk '{print $2}')
+
+          VERSION_NAME="${VERSION%%+*}"
+          BUILD_NUMBER="${VERSION##*+}"
+
+          if [[ "$VERSION" != *"+"* ]]; then
+            BUILD_NUMBER=0
+          fi
+
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION_NAME"
+
+          PATCH=$((PATCH + 1))
+          BUILD_NUMBER=$((BUILD_NUMBER + 1))
+
+          NEW_VERSION="${MAJOR}.${MINOR}.${PATCH}+${BUILD_NUMBER}"
+
+          echo "Current : $VERSION"
+          echo "New     : $NEW_VERSION"
+
+          sed -i "s/^version:.*/version: $NEW_VERSION/" pubspec.yaml
+
+          echo "new_version=v${MAJOR}.${MINOR}.${PATCH}" >> $GITHUB_OUTPUT
+          echo "new_build=${BUILD_NUMBER}" >> $GITHUB_OUTPUT
+
+      - name: Commit Version
+        if: github.event_name != 'pull_request' && !startsWith(github.ref, 'refs/tags/')
+        shell: bash
+        run: |
+
+          git config user.name github-actions[bot]
+          git config user.email github-actions[bot]@users.noreply.github.com
+
+          git add pubspec.yaml
+
+          git diff --cached --quiet && exit 0
+
+          git commit -m "chore: bump version to ${{ steps.version_bump.outputs.new_version }}+${{ steps.version_bump.outputs.new_build }} [skip ci]"
+
+          git push
+
+      ###########################################################
+      # ANALYSIS
+      ###########################################################
+
+      - name: Analyze
         run: flutter analyze
 
-      - name: Run tests
+      - name: Test
         run: flutter test
 
-      - name: Decode Android Keystore
+      ###########################################################
+      # ANDROID SIGNING
+      ###########################################################
+
+      - name: Decode Keystore
         if: github.event_name != 'pull_request'
         env:
-          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.KEY_STORE_PASSWORD }}
+        shell: bash
         run: |
-          if [ -z "$ANDROID_KEYSTORE_BASE64" ]; then
-            echo "ANDROID_KEYSTORE_BASE64 is not set in secrets. Skipping keystore decoding and release signing."
-          else
-            # Strip spaces, carriage returns, and newlines before decoding to avoid corruption
-            echo "$ANDROID_KEYSTORE_BASE64" | tr -d '\r\n[:space:]' | base64 --decode > android/app/release.jks
-            if [ ! -s android/app/release.jks ]; then
-              echo "::error::Decoded keystore file is empty or corrupted!"
-              exit 1
-            fi
-            echo "Keystore successfully decoded and validated."
+
+          if [ -z "$KEYSTORE" ]; then
+            echo "No Android signing configured."
+            exit 0
           fi
+
+          echo "$KEYSTORE" | tr -d '\n\r ' | base64 --decode > android/app/release.jks
+
+          keytool -list \
+            -keystore android/app/release.jks \
+            -storepass "$STORE_PASSWORD"
 
       - name: Create key.properties
         if: github.event_name != 'pull_request'
         env:
-          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-          KEY_STORE_PASSWORD: ${{ secrets.KEY_STORE_PASSWORD }}
+          KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.KEY_STORE_PASSWORD }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
           ALIAS: ${{ secrets.ALIAS }}
+        shell: bash
         run: |
-          if [ -z "$ANDROID_KEYSTORE_BASE64" ]; then
-            echo "ANDROID_KEYSTORE_BASE64 is not set in secrets. Skipping key.properties generation."
-          else
-            echo "storePassword=$KEY_STORE_PASSWORD" > android/key.properties
-            echo "keyPassword=$KEY_PASSWORD" >> android/key.properties
-            echo "keyAlias=$ALIAS" >> android/key.properties
-            echo "storeFile=release.jks" >> android/key.properties
+
+          if [ -z "$KEYSTORE" ]; then
+            echo "Skipping key.properties"
+            exit 0
           fi
 
+          cat > android/key.properties <<EOF
+          storePassword=$STORE_PASSWORD
+          keyPassword=$KEY_PASSWORD
+          keyAlias=$ALIAS
+          storeFile=release.jks
+          EOF
+
+      ###########################################################
+      # BUILD
+      ###########################################################
+
       - name: Build APK
+        if: github.event_name != 'pull_request'
         run: flutter build apk --release
 
       - name: Build AppBundle
+        if: github.event_name != 'pull_request'
         run: flutter build appbundle --release
 
-      - name: Upload APK Artifact
+      ###########################################################
+      # ARTIFACTS
+      ###########################################################
+
+      - name: Upload APK
+        if: github.event_name != 'pull_request'
         uses: actions/upload-artifact@v4
         with:
           name: release-apk
           path: build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error
 
-      - name: Upload AppBundle Artifact
+      - name: Upload AAB
+        if: github.event_name != 'pull_request'
         uses: actions/upload-artifact@v4
         with:
           name: release-aab
           path: build/app/outputs/bundle/release/app-release.aab
+          if-no-files-found: error
 
-      - name: Determine Release Settings
-        id: release_settings
+      ###########################################################
+      # RELEASE
+      ###########################################################
+
+      - name: Release Metadata
+        id: release
         if: github.event_name != 'pull_request'
-        env:
-          NEW_VERSION: ${{ steps.version_bump.outputs.new_version }}
-          NEW_BUILD: ${{ steps.version_bump.outputs.new_build }}
+        shell: bash
         run: |
+
           if [[ "${{ github.ref }}" == refs/tags/* ]]; then
-            TAG_NAME="${{ github.ref_name }}"
-            if [[ "$TAG_NAME" == *"beta"* ]]; then
-              echo "prerelease=true" >> $GITHUB_OUTPUT
-              echo "release_name=Beta $TAG_NAME" >> $GITHUB_OUTPUT
-            else
-              echo "prerelease=false" >> $GITHUB_OUTPUT
-              echo "release_name=Release $TAG_NAME" >> $GITHUB_OUTPUT
-            fi
-            echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
+
+            TAG="${{ github.ref_name }}"
+
           else
-            echo "prerelease=false" >> $GITHUB_OUTPUT
-            echo "release_name=Build $NEW_VERSION+$NEW_BUILD" >> $GITHUB_OUTPUT
-            echo "tag_name=$NEW_VERSION" >> $GITHUB_OUTPUT
+
+            TAG="${{ steps.version_bump.outputs.new_version }}"
+
           fi
 
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "name=Release $TAG" >> $GITHUB_OUTPUT
+
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
         if: github.event_name != 'pull_request'
+        uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ steps.release_settings.outputs.tag_name }}
-          name: ${{ steps.release_settings.outputs.release_name }}
+          tag_name: ${{ steps.release.outputs.tag }}
+          name: ${{ steps.release.outputs.name }}
+          generate_release_notes: true
+          draft: false
           files: |
             build/app/outputs/flutter-apk/app-release.apk
             build/app/outputs/bundle/release/app-release.aab
-          draft: false
-          prerelease: ${{ steps.release_settings.outputs.prerelease == 'true' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
