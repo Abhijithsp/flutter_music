@@ -22,7 +22,7 @@ class AudioServiceInitializer {
         androidStopForegroundOnPause: false,
         androidShowNotificationBadge: true,
         // Small monochrome or default verified launcher icon
-        androidNotificationIcon: 'mipmap/ic_launcher',
+        androidNotificationIcon: 'drawable/ic_stat_music',
       ),
     );
   }

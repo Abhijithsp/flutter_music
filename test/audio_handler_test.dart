@@ -125,5 +125,22 @@ void main() {
 
       expect(handler.mediaItem.value, equals(testItem));
     });
+
+    test('should update mediaItem when loadPlaylist is called', () async {
+      final handler = MyAudioHandler();
+
+      const testItem = MediaItem(
+        id: 'content://media/external/audio/media/1',
+        album: 'Test Album',
+        title: 'Test Song',
+        artist: 'Test Artist',
+        duration: Duration(minutes: 3),
+      );
+
+      // Call loadPlaylist which should automatically sync current track to mediaItem
+      await handler.loadPlaylist([testItem]);
+
+      expect(handler.mediaItem.value, equals(testItem));
+    });
   });
 }

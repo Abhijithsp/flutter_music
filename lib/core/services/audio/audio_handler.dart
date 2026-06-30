@@ -1,5 +1,6 @@
 import 'package:audio_service/audio_service.dart';
 import 'package:just_audio/just_audio.dart';
+import 'package:rxdart/rxdart.dart';
 
 class MyAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandler {
   final AudioPlayer _player = AudioPlayer();
@@ -9,13 +10,22 @@ class MyAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandler {
   }
 
   void _init() {
-    // ── 1. Sync current index to mediaItem ──────────────────────────────────
-    // Listen to current index changes on the player and broadcast the
-    // corresponding MediaItem from the queue. This is simple, reliable, and
-    // works perfectly even when shuffle mode is enabled.
-    _player.currentIndexStream.listen((index) {
-      if (index != null && index >= 0 && index < queue.value.length) {
-        mediaItem.add(queue.value[index]);
+    // ── 1. Sync current index and queue to mediaItem ────────────────────────
+    // Combine current index stream and queue stream to keep mediaItem in sync.
+    // This handles both changing tracks and loading a new playlist correctly,
+    // avoiding race conditions between just_audio and audio_service.
+    Rx.combineLatest2<List<MediaItem>, int?, MediaItem?>(
+      queue,
+      _player.currentIndexStream,
+      (queueList, index) {
+        if (index != null && index >= 0 && index < queueList.length) {
+          return queueList[index];
+        }
+        return null;
+      },
+    ).listen((item) {
+      if (item != null) {
+        mediaItem.add(item);
       }
     });
 
@@ -92,9 +102,12 @@ class MyAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandler {
         .map((item) => AudioSource.uri(Uri.parse(item.id), tag: item))
         .toList();
 
+    // Update queue first so the combined stream can emit the correct mediaItem
+    // as soon as just_audio resolves the index.
+    queue.add(items);
+
     // setAudioSources is the modern API in just_audio 0.10+
     await _player.setAudioSources(sources);
-    queue.add(items);
   }
 
   @override
