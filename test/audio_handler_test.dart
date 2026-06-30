@@ -9,11 +9,66 @@ void main() {
   const justAudioChannel = MethodChannel('com.ryanheise.just_audio.methods');
   const audioServiceChannel = MethodChannel('com.ryanheise.audioservice.methods');
 
+  final activePlayerIds = <String>{};
+
   setUp(() {
+    activePlayerIds.clear();
+
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(justAudioChannel, (MethodCall methodCall) async {
-      if (methodCall.method == 'create') {
-        return {'id': 'mock-player-id'};
+      if (methodCall.method == 'init') {
+        final id = methodCall.arguments['id'] as String;
+        activePlayerIds.add(id);
+
+        final playerChannel = MethodChannel('com.ryanheise.just_audio.methods.$id');
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(playerChannel, (MethodCall playerCall) async {
+          if (playerCall.method == 'load') {
+            return {
+              'duration': 180000000,
+            };
+          }
+          return <dynamic, dynamic>{};
+        });
+
+        final eventChannel = EventChannel('com.ryanheise.just_audio.events.$id');
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockStreamHandler(eventChannel, MockStreamHandler.inline(
+          onListen: (arguments, sink) {
+            sink.success({
+              'processingState': 3, // ready
+              'updateTime': DateTime.now().millisecondsSinceEpoch,
+              'updatePosition': 0,
+              'bufferedPosition': 0,
+              'duration': 180000000,
+              'currentIndex': 0,
+            });
+          },
+          onCancel: (arguments) {},
+        ));
+
+        final dataChannel = EventChannel('com.ryanheise.just_audio.data.$id');
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockStreamHandler(dataChannel, MockStreamHandler.inline(
+          onListen: (arguments, sink) {
+            sink.success({
+              'volume': 1.0,
+              'speed': 1.0,
+              'pitch': 1.0,
+              'shuffleModeEnabled': false,
+              'loopMode': 0,
+            });
+          },
+          onCancel: (arguments) {},
+        ));
+
+        return null;
+      }
+      if (methodCall.method == 'disposePlayer') {
+        return <dynamic, dynamic>{};
+      }
+      if (methodCall.method == 'disposeAllPlayers') {
+        return <dynamic, dynamic>{};
       }
       return null;
     });
@@ -29,6 +84,19 @@ void main() {
         .setMockMethodCallHandler(justAudioChannel, null);
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(audioServiceChannel, null);
+    for (final id in activePlayerIds) {
+      final playerChannel = MethodChannel('com.ryanheise.just_audio.methods.$id');
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(playerChannel, null);
+
+      final eventChannel = EventChannel('com.ryanheise.just_audio.events.$id');
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockStreamHandler(eventChannel, null);
+
+      final dataChannel = EventChannel('com.ryanheise.just_audio.data.$id');
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockStreamHandler(dataChannel, null);
+    }
   });
 
   group('MyAudioHandler Tests', () {
