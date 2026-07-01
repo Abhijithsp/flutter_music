@@ -21,6 +21,7 @@ class AudioServiceInitializer {
         androidNotificationOngoing: false,
         androidStopForegroundOnPause: false,
         androidShowNotificationBadge: true,
+        androidNotificationClickStartsActivity: true,
         // Small monochrome or default verified launcher icon
         androidNotificationIcon: 'drawable/ic_stat_music',
       ),

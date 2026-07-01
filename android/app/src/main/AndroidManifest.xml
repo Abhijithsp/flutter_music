@@ -15,6 +15,12 @@
         android:label="Aura Sound"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
+        
+        <!-- Metadata for the notification icon -->
+        <meta-data
+            android:name="com.ryanheise.audioservice.NOTIFICATION_ICON"
+            android:resource="@drawable/ic_stat_music" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true"

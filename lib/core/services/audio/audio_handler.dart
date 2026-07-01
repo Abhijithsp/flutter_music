@@ -1,6 +1,5 @@
 import 'package:audio_service/audio_service.dart';
 import 'package:just_audio/just_audio.dart';
-import 'package:rxdart/rxdart.dart';
 
 class MyAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandler {
   final AudioPlayer _player = AudioPlayer();
@@ -10,22 +9,17 @@ class MyAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandler {
   }
 
   void _init() {
-    // ── 1. Sync current index and queue to mediaItem ────────────────────────
-    // Combine current index stream and queue stream to keep mediaItem in sync.
-    // This handles both changing tracks and loading a new playlist correctly,
-    // avoiding race conditions between just_audio and audio_service.
-    Rx.combineLatest2<List<MediaItem>, int?, MediaItem?>(
-      queue,
-      _player.currentIndexStream,
-      (queueList, index) {
-        if (index != null && index >= 0 && index < queueList.length) {
-          return queueList[index];
+    // ── 1. Sync current source and queue to mediaItem ───────────────────────
+    // We listen to sequenceStateStream to track the currently active track
+    // and its metadata. Each AudioSource is loaded with its corresponding MediaItem
+    // as the tag. This resolves potential race conditions of combineLatest2.
+    _player.sequenceStateStream.listen((sequenceState) {
+      final currentSource = sequenceState.currentSource;
+      if (currentSource != null) {
+        final item = currentSource.tag as MediaItem?;
+        if (item != null) {
+          mediaItem.add(item);
         }
-        return null;
-      },
-    ).listen((item) {
-      if (item != null) {
-        mediaItem.add(item);
       }
     });
 
